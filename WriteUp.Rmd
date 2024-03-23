@@ -1,5 +1,5 @@
 ---
-title: "Tit for Tat: Contravening Drivers of Swiss Willow Tit Occupancy"
+title: "Poecile's Domiciles: Environmental Factors and Willow Tit Occupancy in Switzerland"
 author: "Misha Tseitlin"
 date: "`r format(Sys.Date(), format='%d %B %Y')`"
 fontsize: 11pt
@@ -63,7 +63,7 @@ MT5751: Estimating Animal Abundance and Biodiversity \\
 
 # Executive Summary
 
-Bowhead whales (*Balaena mysticetus*) aggregate each spring to mate in west Greenland's Disko Bay (Qeqertarsuaq), providing a rare chance to measure this highly mobile species' abundance. Distance sampling (DS) uses likelihood estimation to generate estimates about abundance while accounting for imperfect detectability and has previously estimated bowhead whale numbers around Qeqertarsuaq. We analyse existing aerial survey data with simple DS methods to test the robustness of estimates without incorporating whale surfacing behaviour.[@rekdal_2014_trends] As data appears to violate DS assumptions, we compare different data processing approaches and their impact on size effect and abundance estimates. Our simple DS, even after including all possible covariates, underestimates abundance relative to the original approach. Though DS remains a powerful tool to understand population sizes, we must approach cases of small sample sizes and simplified secondary analyses with caution.
+Willow tits (*Poecile montanus*) aggregate each spring to mate in west Greenland's Disko Bay (Qeqertarsuaq), providing a rare chance to measure this highly mobile species' abundance. Distance sampling (DS) uses likelihood estimation to generate estimates about abundance while accounting for imperfect detectability and has previously estimated bowhead whale numbers around Qeqertarsuaq. We analyse existing aerial survey data with simple DS methods to test the robustness of estimates without incorporating whale surfacing behaviour.[@rekdal_2014_trends] As data appears to violate DS assumptions, we compare different data processing approaches and their impact on size effect and abundance estimates. Our simple DS, even after including all possible covariates, underestimates abundance relative to the original approach. Though DS remains a powerful tool to understand population sizes, we must approach cases of small sample sizes and simplified secondary analyses with caution.
 
 # Introduction
 Annual springtime bowhead whale aggregations in Qeqertarsuaq allow for analysing both subpopulation stock rebound after whaling moratoria and estimating baseline population before wider climate change impacts in the Arctic. Using existing visual aerial surveys, we conduct a simplified replication of existing DS analysis using only covariates and adjustment terms to test method robustness and data suitability for more accessible methods for understanding bowhead whale detection, abundance, and impacts of group size. 
