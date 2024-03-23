@@ -4,54 +4,14 @@ library(tidyverse)
 library(MuMIn)
 library(AICcmodavg)
 library(viridisLite)
-
+library(latex2exp)
 # read in data
 data(willow)
-
-willowNum <- willow %>% mutate(forestsq = forest^2) %>%
-  mutate_all(as.numeric)
-
-# figure out where the data is coming from
-library(AHMBook)
-data("SwissTits")
-# lots of data cleaning for no reason
-willowFilt <- data.frame(SwissTits$counts) %>% 
-  select(ends_with("Willow.tit"))
-willowCol <- colnames(willowFilt)
-willowColNew <- str_sub(willowCol, end = 7)
-willowFilt <- willowFilt %>% 
-  rename_with(~ willowColNew, all_of(willowCol)) %>% 
-  rownames_to_column("siteID") %>% 
-  pivot_longer(
-    cols = `X1.2004`:`X3.2013`, 
-    names_to = "id",
-    values_to = "count") %>% rowwise() %>% 
-  mutate(y = paste0("y", str_sub(id, start = 2, end = 2)),
-         yr = str_sub(id, start = 4)) %>% select(-id)
-willowFin <- willowFilt %>%   pivot_wider(
-  names_from = y, 
-  values_from = count)
-# data is from 2011: 237 observations
-testObs <- willowFin %>% group_by(yr) %>% 
-  summarise(numObs = sum(!(is.na(y1) & is.na(y2) & is.na(y3))))
-# create data for plotting
-willowOcc <- left_join(willowFin, SwissTits$sites, by = "siteID") %>% 
-  mutate(y1 = as.numeric(y1 > 0),
-         y2 = as.numeric(y2 > 0),
-         y3 = as.numeric(y3 > 0)) %>% 
-  filter(!if_all(c(y1, y2, y3), is.na))
-
-# give up and try something else
-# still doesn't work
-siteID <- data.frame(SwissTits$sites) %>% mutate(forestP = forest/100,
-                                                 elevZ = round(((elev - 1182.574)/646.333),6))
-willowID <- willowNum %>% mutate(forestP = forest,
-                                 rlength = length,
-                                 elevZ = round(elev,6)) %>% 
+# prepare the data how I need it
+willowNum <- willow %>% mutate(forestsq = forest^2,
+                               iLength = 1/length) %>%
+  mutate_all(as.numeric) %>% 
   rownames_to_column("id")
-willowPlot <- left_join(willowID, siteID, by = c("forestP","rlength"))
-
-
 
 willowUnm <- unmarkedFrameOccu(
   y = willowNum[,c("y.1","y.2","y.3")], 
@@ -59,11 +19,13 @@ willowUnm <- unmarkedFrameOccu(
   siteCovs = data.frame(elev = willowNum$elev,
                         elev2 = willowNum$elevsq,
                         forest = willowNum$forest,
-                        forest2 = willowNum$forestsq), 
+                        forest2 = willowNum$forestsq,
+                        iLength = willowNum$iLength), 
   obsCovs = list(day = willowNum[,c("day1","day2","day3")], 
                  dur = willowNum[,c("dur1","dur2","dur3")],
                  intensity = willowNum[,c("intensity1","intensity2","intensity3")],
                  length = willowNum[,c("length","length","length")],
+                 iLength = willowNum[,c("iLength","iLength","iLength")],
                  forest = willowNum[,c("forest","forest","forest")],
                  forest2 = willowNum[,c("forestsq","forestsq","forestsq")],
                  elev = willowNum[,c("elev","elev","elev")],
@@ -109,9 +71,45 @@ mDredgeB2 <- dredge(mfullAct, rank = "BIC")
 mDredgeA2 <- dredge(mfullAct, rank = "AIC")
 mDredgeAc2 <- dredge(mfullAct, rank = "AICc")
 
+mAlt <- occu(formula = ~day + dur + forest  # p formula
+              ~elev + forest, #psi formula
+              data = willowUnm) #the data object
+
+mAlt1 <- occu(formula = ~day + dur + forest # p formula
+              ~elev + elev2 + forest + forest2, #psi formula
+              data = willowUnm) #the data object
+
+mAlt2 <- occu(formula = ~day + dur + forest + forest2 # p formula
+              ~elev + elev2 + forest + forest2, #psi formula
+              data = willowUnm) #the data object
+
+mOptm_Alt <- occu(formula = ~day + dur + forest + forest*day # p formula
+              ~elev, #psi formula
+              data = willowUnm) #the data object
+
+# recording visibility/leafing may be a good way to increase separability and avoid forest in both models
 mOptm <- occu(formula = ~day + dur + forest + forest*day # p formula
               ~elev + elev2 + forest + forest2 + elev2*forest + elev2*forest2 , #psi formula
               data = willowUnm) #the data object
+
+mAlt3 <- occu(formula = ~day + dur + forest + forest*day # p formula
+              ~elev + elev2 + forest + forest2 + elev*forest + elev*forest2 + elev2*forest + elev2*forest2 , #psi formula
+              data = willowUnm) #the data object
+
+# combine some representative models for displaying
+fl <- fitList(
+  "p(.)                                   psi(.)"                                                                      = m0,
+  "p(day + dur + forest)                  psi(elev + forest)"                                                          = mAlt,
+  "p(day + dur + forest)                  psi(elev + elev^2 + forest + forest^2)"                                      = mAlt1,
+  "p(day + dur + forest + forest^2)       psi(elev + elev^2 + forest + forest^2)"                                      = mAlt2,
+  "p(day + dur + forest + forest*day)     psi(elev)"                                                                   = mOptm_Alt,  
+  "p(day + dur + forest + forest*day)     psi(elev + elev^2*(forest + forest^2))"                                      = mOptm,
+  "p(day + dur + forest + forest*day)     psi((elev + elev^2)*(forest + forest^2))"                                    = mAlt3)
+
+# model output table to format
+ms <- modSel(fl)
+
+# actual model summary
 summary(mOptm)
 
 # test for VIF?
@@ -139,10 +137,13 @@ gelev <- ggplot(data = Switzerland, aes(x=x, y=y,fill=elevation)) +
         axis.ticks = element_blank(),
         panel.grid = element_blank(),
         panel.border = element_blank(),
-        legend.position="left") + 
+        legend.position = "bottom") + 
   labs(x = "",
        y = "",
        fill = "Elevation (m)") + 
+  guides(fill = guide_colorbar(# draw border around the legend
+                               frame.colour = "black",
+                               barwidth = 10)) + 
   coord_fixed()
 gfor <- ggplot(data = Switzerland, aes(x=x, y=y,fill=forest)) +
   geom_raster() +
@@ -154,10 +155,13 @@ gfor <- ggplot(data = Switzerland, aes(x=x, y=y,fill=forest)) +
         axis.ticks = element_blank(),
         panel.grid = element_blank(),
         panel.border = element_blank(),
-        legend.position="left") + 
+        legend.position="bottom") + 
   labs(x = "",
        y = "",
-       fill = "% Forest") + 
+       fill = "Forest (%)")  + 
+  guides(fill = guide_colorbar(# draw border around the legend
+    frame.colour = "black",
+    barwidth = 10)) + 
   coord_fixed()
 
 for_pred <- data.frame(elev = (Switzerland$elevation - 1182.574)/646.333,      # convert original m to z-score
@@ -168,11 +172,17 @@ for_pred <- data.frame(elev = (Switzerland$elevation - 1182.574)/646.333,      #
                        Y = Switzerland$y)                        #keep the coordinates
 cowplot::plot_grid(gelev,gfor,nrow=2)
 
-willow_sdm <- predict(object = mOptm,     #the top model
-                      type = "state",      #predict from state model
-                      newdata = for_pred,  #spatially indexed data frame
-                      append=TRUE)         #add data to predictions
-gpred <- ggplot(data = willow_sdm, aes(x=X, y=Y,fill=Predicted)) +
+willowPredSDM <- modavgPred(list(mOptm), # top model
+                            newdata = for_pred, #spatially indexed data frame
+                            parm.type = "psi",  #predict from state model
+                            c.hat = gof.boot$c.hat.est) #inflate SEs using Royle & Kery method
+#add data to predictions manually
+willow_sdm <- for_pred %>% mutate(Predicted = willowPredSDM$mod.avg.pred,
+                                  SE = willowPredSDM$uncond.se,
+                                  lower = willowPredSDM$lower.CL,
+                                  upper = willowPredSDM$upper.CL)
+
+gpredM_1 <- ggplot(data = willow_sdm, aes(x=X, y=Y,fill=Predicted)) +
   geom_raster() +
   scale_fill_viridis_c(direction = 1, 
                        option = "H") +
@@ -184,12 +194,96 @@ gpred <- ggplot(data = willow_sdm, aes(x=X, y=Y,fill=Predicted)) +
         axis.ticks = element_blank(),
         panel.grid = element_blank(),
         panel.border = element_blank(),
+        legend.position="bottom") + 
+  labs(x = "",
+       y = "",
+       fill = TeX(r'(Estimated $\psi$)'))  + 
+  guides(fill = guide_colorbar(# draw border around the legend
+    frame.colour = "black",
+    barwidth = 10)) + 
+  coord_fixed()
+
+gpredE <- ggplot(data = willow_sdm, aes(x=X, y=Y,fill=SE)) +
+  geom_raster() +
+  scale_fill_viridis_c(direction = 1, 
+                       option = "H") +
+  theme_bw() +
+  theme(axis.text = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
+        legend.position="bottom") + 
+  labs(x = "",
+       y = "",
+       fill = TeX(r'(Estimated $\psi$ Error)'))  + 
+  guides(fill = guide_colorbar(# draw border around the legend
+    frame.colour = "black",
+    barwidth = 10)) + 
+  coord_fixed()
+
+cowplot::plot_grid(gelev,gfor,gpredM_1,gpredE,nrow=2)
+
+gpredL <- ggplot(data = willow_sdm, aes(x=X, y=Y,fill=lower)) +
+  geom_raster() +
+  scale_fill_viridis_c(direction = 1, 
+                       option = "H", 
+                       limits= c(0,1)) +
+  theme_bw() +
+  theme(axis.text = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
         legend.position="left") + 
   labs(x = "",
        y = "",
-       fill = "P(Occupancy)") + 
+       fill = TeX(r'(Lower Bound $\psi$)')) + 
+  guides(fill = guide_colorbar(# draw border around the legend
+    frame.colour = "black")) + 
   coord_fixed()
-cowplot::plot_grid(gelev,gfor,gpred,nrow=3)
+
+gpredM_2 <- ggplot(data = willow_sdm, aes(x=X, y=Y,fill=Predicted)) +
+  geom_raster() +
+  scale_fill_viridis_c(direction = 1, 
+                       option = "H", 
+                       limits= c(0,1)) +
+  # add actual observations if we have x,y data
+  # geom_point(data = willowNum, aes(x=X, y=Y)) +
+  theme_bw() +
+  theme(axis.text = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
+        legend.position="left") + 
+  labs(x = "",
+       y = "",
+       fill = TeX(r'(Estimated $\psi$)'))  + 
+  guides(fill = guide_colorbar(# draw border around the legend
+    frame.colour = "black")) + 
+  coord_fixed()
+
+gpredH <- ggplot(data = willow_sdm, aes(x=X, y=Y,fill=upper)) +
+  geom_raster() +
+  scale_fill_viridis_c(direction = 1, 
+                       option = "H", 
+                       limits= c(0,1)) +
+  theme_bw() +
+  theme(axis.text = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_blank(),
+        panel.border = element_blank(),
+        legend.position="left") + 
+  labs(x = "",
+       y = "",
+       fill = TeX(r'(Upper Bound $\psi$)'))  + 
+  guides(fill = guide_colorbar(# draw border around the legend
+    frame.colour = "black")) + 
+  coord_fixed()
+
+cowplot::plot_grid(gpredL, gpredM_2, gpredH,nrow=3)
 
 
 
@@ -198,15 +292,19 @@ cowplot::plot_grid(gelev,gfor,gpred,nrow=3)
 pred_psi_eleL <- data.frame(elev = seq(min(willowUnm@siteCovs$elev, na.rm=TRUE),
                                       max(willowUnm@siteCovs$elev, na.rm=TRUE),
                                       length = 30),
-                           forest = quantile(probs = 0.20, willowUnm@siteCovs$forest, na.rm=TRUE)) %>% 
+                           forest = quantile(probs = 0.25, willowUnm@siteCovs$forest, na.rm=TRUE)) %>% 
   mutate(elev2 = elev^2,
          forest2 = forest^2)
-pred_psi_eleL <- predict(mOptm,type="state",newdata = pred_psi_eleL, append = TRUE) %>% 
-  mutate(elevR = 1182.574 + elev*646.333) 
+predPsiEleL <- modavgPred(list(mOptm), newdata = pred_psi_eleL, parm.type = "psi", c.hat = gof.boot$c.hat.est)
+pred_psi_eleL <- pred_psi_eleL %>% mutate(Predicted = predPsiEleL$mod.avg.pred,
+                                          SE = predPsiEleL$uncond.se,
+                                          lower = predPsiEleL$lower.CL,
+                                          upper = predPsiEleL$upper.CL,
+                                          elevR = 1182.574 + elev*646.333)
 ggpsieleL <- ggplot(data = pred_psi_eleL, aes(x = elevR, y = Predicted)) +
   geom_ribbon(aes(ymin=lower, ymax=upper), fill="#440154", alpha=0.1) +
   geom_line(size=1,color="#440154") +
-  ylab("Pr(Occupancy)") + xlab("Elevation (m)") + ylim(0,1) + theme_bw()
+  ylab("P(Occupied)") + xlab("Elevation (m)") + ylim(0,1) + theme_bw()
 
 pred_psi_eleM <- data.frame(elev = seq(min(willowUnm@siteCovs$elev, na.rm=TRUE),
                                       max(willowUnm@siteCovs$elev, na.rm=TRUE),
@@ -214,39 +312,52 @@ pred_psi_eleM <- data.frame(elev = seq(min(willowUnm@siteCovs$elev, na.rm=TRUE),
                            forest = median(willowUnm@siteCovs$forest, na.rm=TRUE)) %>% 
   mutate(elev2 = elev^2,
          forest2 = forest^2)
-pred_psi_eleM <- predict(mOptm,type="state",newdata = pred_psi_eleM, append = TRUE) %>% 
-  mutate(elevR = 1182.574 + elev*646.333) 
+predPsiEleM <- modavgPred(list(mOptm), newdata = pred_psi_eleM, parm.type = "psi", c.hat = gof.boot$c.hat.est)
+pred_psi_eleM <- pred_psi_eleM %>% mutate(Predicted = predPsiEleM$mod.avg.pred,
+                                          SE = predPsiEleM$uncond.se,
+                                          lower = predPsiEleM$lower.CL,
+                                          upper = predPsiEleM$upper.CL,
+                                          elevR = 1182.574 + elev*646.333)
 ggpsieleM <- ggplot(data = pred_psi_eleM, aes(x = elevR, y = Predicted)) +
   geom_ribbon(aes(ymin=lower, ymax=upper), fill="#440154", alpha=0.1) +
   geom_line(size=1,color="#440154") +
-  ylab("Pr(Occupancy)") + xlab("Elevation (m)") + ylim(0,1) + theme_bw()
+  ylab("P(Occupied)") + xlab("Elevation (m)") + ylim(0,1) + theme_bw()
 
 pred_psi_eleH <- data.frame(elev = seq(min(willowUnm@siteCovs$elev, na.rm=TRUE),
                                       max(willowUnm@siteCovs$elev, na.rm=TRUE),
                                       length = 30),
-                           forest = quantile(probs = 0.80, willowUnm@siteCovs$forest, na.rm=TRUE)) %>% 
+                           forest = quantile(probs = 0.75, willowUnm@siteCovs$forest, na.rm=TRUE)) %>% 
   mutate(elev2 = elev^2,
          forest2 = forest^2)
-pred_psi_eleH <- predict(mOptm,type="state",newdata = pred_psi_eleH, append = TRUE) %>% 
-  mutate(elevR = 1182.574 + elev*646.333) 
+predPsiEleH <- modavgPred(list(mOptm), newdata = pred_psi_eleH, parm.type = "psi", c.hat = gof.boot$c.hat.est)
+pred_psi_eleH <- pred_psi_eleH %>% mutate(Predicted = predPsiEleH$mod.avg.pred,
+                                          SE = predPsiEleH$uncond.se,
+                                          lower = predPsiEleH$lower.CL,
+                                          upper = predPsiEleH$upper.CL,
+                                          elevR = 1182.574 + elev*646.333)
 ggpsieleH <- ggplot(data = pred_psi_eleH, aes(x = elevR, y = Predicted)) +
   geom_ribbon(aes(ymin=lower, ymax=upper), fill="#440154", alpha=0.1) +
   geom_line(size=1,color="#440154") +
-  ylab("Pr(Occupancy)") + xlab("Elevation (m)") + ylim(0,1) + theme_bw()
+  ylab("P(Occupied)") + xlab("Elevation (m)") + ylim(0,1) + theme_bw()
 
 #---------------------------------------------------------------------------------------#
 #psi ~ for | mean(elev)
 pred_psi_forL <- data.frame(forest = seq(min(willowUnm@siteCovs$forest, na.rm=TRUE),
                                       max(willowUnm@siteCovs$forest, na.rm=TRUE),
                                       length = 30),
-                           elev = quantile(probs = 0.20, willowUnm@siteCovs$elev, na.rm=TRUE)) %>% 
+                           elev = quantile(probs = 0.25, willowUnm@siteCovs$elev, na.rm=TRUE)) %>% 
   mutate(elev2 = elev^2,
          forest2 = forest^2)
-pred_psi_forL <- predict(mOptm,type="state",newdata = pred_psi_forL, append = TRUE)
-ggpsiforL <- ggplot(data = pred_psi_forL, aes(x = forest, y = Predicted)) +
+predPsiForL <- modavgPred(list(mOptm), newdata = pred_psi_forL, parm.type = "psi", c.hat = gof.boot$c.hat.est)
+pred_psi_forL <- pred_psi_forL %>% mutate(Predicted = predPsiForL$mod.avg.pred,
+                                          SE = predPsiForL$uncond.se,
+                                          lower = predPsiForL$lower.CL,
+                                          upper = predPsiForL$upper.CL,
+                                          forestP = forest*100)
+ggpsiforL <- ggplot(data = pred_psi_forL, aes(x = forestP, y = Predicted)) +
   geom_ribbon(aes(ymin=lower, ymax=upper), fill="#440154", alpha=0.1) +
   geom_line(size=1,color="#440154") +
-  ylab("Pr(Occupancy)") + xlab("Forest Cover (%)") + ylim(0,1) + theme_bw()
+  ylab("P(Occupied)") + xlab("Forest Cover (%)") + ylim(0,1) + theme_bw()
 
 pred_psi_forM <- data.frame(forest = seq(min(willowUnm@siteCovs$forest, na.rm=TRUE),
                                         max(willowUnm@siteCovs$forest, na.rm=TRUE),
@@ -254,22 +365,59 @@ pred_psi_forM <- data.frame(forest = seq(min(willowUnm@siteCovs$forest, na.rm=TR
                            elev = median(willowUnm@siteCovs$elev, na.rm=TRUE)) %>% 
   mutate(elev2 = elev^2,
          forest2 = forest^2)
-pred_psi_forM <- predict(mOptm,type="state",newdata = pred_psi_forM, append = TRUE)
-ggpsiforM <- ggplot(data = pred_psi_forM, aes(x = forest, y = Predicted)) +
+predPsiForM <- modavgPred(list(mOptm), newdata = pred_psi_forM, parm.type = "psi", c.hat = gof.boot$c.hat.est)
+pred_psi_forM <- pred_psi_forM %>% mutate(Predicted = predPsiForM$mod.avg.pred,
+                                          SE = predPsiForM$uncond.se,
+                                          lower = predPsiForM$lower.CL,
+                                          upper = predPsiForM$upper.CL,
+                                          forestP = forest*100)
+ggpsiforM <- ggplot(data = pred_psi_forM, aes(x = forestP, y = Predicted)) +
   geom_ribbon(aes(ymin=lower, ymax=upper), fill="#440154", alpha=0.1) +
   geom_line(size=1,color="#440154") +
-  ylab("Pr(Occupancy)") + xlab("Forest Cover (%)") + ylim(0,1) + theme_bw()
+  ylab("P(Occupied)") + xlab("Forest Cover (%)") + ylim(0,1) + theme_bw()
 
 pred_psi_forH <- data.frame(forest = seq(min(willowUnm@siteCovs$forest, na.rm=TRUE),
                                         max(willowUnm@siteCovs$forest, na.rm=TRUE),
                                         length = 30),
-                           elev = quantile(probs = 0.80, willowUnm@siteCovs$elev, na.rm=TRUE)) %>% 
+                           elev = quantile(probs = 0.75, willowUnm@siteCovs$elev, na.rm=TRUE)) %>% 
   mutate(elev2 = elev^2,
          forest2 = forest^2)
-pred_psi_forH <- predict(mOptm,type="state",newdata = pred_psi_forH, append = TRUE)
-ggpsiforH <- ggplot(data = pred_psi_forH, aes(x = forest, y = Predicted)) +
+predPsiForH <- modavgPred(list(mOptm), newdata = pred_psi_forH, parm.type = "psi", c.hat = gof.boot$c.hat.est)
+pred_psi_forH <- pred_psi_forH %>% mutate(Predicted = predPsiForH$mod.avg.pred,
+                                    SE = predPsiForH$uncond.se,
+                                    lower = predPsiForH$lower.CL,
+                                    upper = predPsiForH$upper.CL,
+                                    forestP = forest*100)
+ggpsiforH <- ggplot(data = pred_psi_forH, aes(x = forestP, y = Predicted)) +
   geom_ribbon(aes(ymin=lower, ymax=upper), fill="#440154", alpha=0.1) +
   geom_line(size=1,color="#440154") +
-  ylab("Pr(Occupancy)") + xlab("Forest Cover (%)") + ylim(0,1) + theme_bw()
+  ylab("P(Occupied)") + xlab("Forest Cover (%)") + ylim(0,1) + theme_bw()
 
 cowplot::plot_grid(ggpsieleL, ggpsieleM, ggpsieleH, ggpsiforL, ggpsiforM, ggpsiforH, nrow=2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# generate predictions for 4 quadrants of interest
+willowPred <- willowNum %>% filter(id %in% c(25, 62, 150, 203)) %>% 
+  rename(elev2 = elevsq,
+         forest2 = forestsq)
+# predicting occurrence from the state process
+predQuads <- modavgPred(list(mOptm), newdata = willowPred, parm.type = "psi", c.hat = gof.boot$c.hat.est)
+willowRes <- willowPred %>% mutate(Predicted = predQuads$mod.avg.pred,
+                                   SE = predQuads$uncond.se,
+                                   lower = predQuads$lower.CL,
+                                   upper = predQuads$upper.CL,
+                                   elev = round((646.333*elev+1182.574),0)) %>% 
+  select(-c(elev2, forest2))
