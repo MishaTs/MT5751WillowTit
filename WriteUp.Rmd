@@ -75,7 +75,6 @@ gof.boot <- read_rds("gofBootstrap.rds")
 
 ```{r uni_logo, echo=F, out.width="50%"}
 knitr::include_graphics("01-standard-vertical-black-text.png")
-
 ```
 
 {\bf School of Mathematics and Statistics}
@@ -107,14 +106,16 @@ logit(\psi_i) & = \beta_0 + \beta_1 Elevation_{i} + \beta_2 Elevation^2_{i} + \b
 &+ \beta_5 Forest_{i} Elevation^2_{i} + \beta_6 Forest^2_{i} Elevation^2_{i} 
 \end{align*}
 $$logit(p_{ij}) = \alpha_0 + \alpha_1 Day_{ij} + \alpha_2 Duration_{ij} + \alpha_3 Forest_{ij} + \alpha_4 Forest_{ij} Day_{ij}$$
-Though detection and state functions look complex at first glance, they more-so demonstrate the difficult of fitting highly non-linear relationships using a linear (GLM) framework. As exploratory analysis showed clear non-linearities in forest cover and elevation, and we manually explored model fits followed by `dredge` in `R` to evaluate all models containing relevant covariates using various information criteria.[@barton_mumin_2023; @r_core_team_r_2023; @aikake_new_1974] Showing all possibilities would be excessive, but adding non-linear terms substantially improves model fit as evaluated by AIC. (Table \@ref(tab:modelComp))
+Detection and state functions, based on only four covariates, demonstrate the complexity of fitting highly non-linear relationships using this linear (GLM) framework fitted using `unmarked` in `R`.[@kellner_unmarked_2023; @r_core_team_r_2023] To account for clear non-linearities in forest cover and elevation, we manually and automatically compared all models containing potentially relevant covariates.[@barton_mumin_2023; @akaike_new_1974] Overall, adding non-linearity substantially improved model fit measured by AIC. (Table \@ref(tab:modelComp)) Finally, we tackled model suitability using Pearson's chi-squared via bootstrap estimation: MacKenzie-Bailey goodness-of-fit tests measured the chance of seeing our data given the model via a p-value and resulting overdispersion $\hat{c}$.[@mazerolle_aiccmodavg_2023] To correct for imperfect fit, we inflated prediction errors by $\hat{c}$.[@kery_applied_2016]
 
 # Results
-Binning data results spawned near-identical outcomes to original analysis with less data and thus precluded robust goodness-of-fit testing (Figure \@ref(fig:spatPred1)).
+Overall, model fit is sub-par but passable yet suggests unmodelled heterogeneity---a violation of occupancy modelling assumptions. On one hand, we  understand including covariates like forest*day interactions for detection (i.e., foliage thickness impedes observer visibility) and occupancy impacts from squared relationships for elevation (i.e., optimal mountain habitat below the tree line) and forests (i.e., higher interspecific competition and less deadwood in aggressively-forested areas). The joint relationship between both forest and elevation further approximates various components of ecosystem suitability including climate and diet that would fall off given more covariates.[@vanhinsbergh_review_2003] Nonetheless, we also avoid overfitting---the lowest AIC suggested including elevation-dependent detection. Elevation indeed affects cloud cover, heat, and humidity and therefore detection (by proxy) but imperfectly captures their effects.[@rottler_elevation-dependent_2019; @hohnsbein_effects_1984] Instead, identifiability issues inhibit parameter-specific inference for only minor predictive improvements.[@cole_parameter_2020] Our final model balances predictive and inferential analysis goals---we imperfectly match the input data but may actually generalise better given 2014 extreme heat and vegetation onset anomalies. (Figure \@ref(fig:gof))
 
-# Discussion
 
-Despite multiple adjustments, we remain concerned about perfect detectability and other DS assumptions. Alternatives like passive monitoring (e.g., using cameras or hydrophones) could improve future surveys. As whales also continually move---behaviourally demonstrating observer avoidance---animals are certainly undetected at their initial locations. 
+GR (Geographic Region)
+
+Given model non-linearity for parameter estimates, we examine partial and predictive effects for inference and management: (Figure \@ref(fig:spatPred1)). 
+
 
 ```{r sumStats, echo = F, message = F}
 # process data for summarising
@@ -229,6 +230,83 @@ knitr::kable(msTab,
            footnote_as_chunk = TRUE,
            threeparttable = TRUE,
            general = "Models include survey day, survey duration, forest cover, and elevation as well as their squared and interaction terms. Interaction terms imply including base terms (e.g., elev*forest includes elev and forest).")
+```
+
+```{r finalState, echo = F, message = F}
+# null model
+m0 <- occu(~1 ~1, data = willowUnm)
+# create some representative models to display
+mAlt <- occu(formula = ~day + dur + forest  # p formula
+              ~elev + forest, #psi formula
+              data = willowUnm) #the data object
+
+mAlt1 <- occu(formula = ~day + dur + forest # p formula
+              ~elev + elev2 + forest + forest2, #psi formula
+              data = willowUnm) #the data object
+
+mAlt2 <- occu(formula = ~day + dur + forest + forest2 # p formula
+              ~elev + elev2 + forest + forest2, #psi formula
+              data = willowUnm) #the data object
+
+mOptm_Alt <- occu(formula = ~day + dur + forest + forest*day # p formula
+              ~elev, #psi formula
+              data = willowUnm) #the data object
+
+# recording visibility/leafing may be a good way to increase separability and avoid forest in both models
+mOptm <- occu(formula = ~day + dur + forest + forest*day # p formula
+              ~elev + elev2 + forest + forest2 + elev2*forest + elev2*forest2 , #psi formula
+              data = willowUnm) #the data object
+
+mAlt3 <- occu(formula = ~day + dur + forest + forest*day # p formula
+              ~elev + elev2 + forest + forest2 + elev*forest + elev*forest2 + elev2*forest + elev2*forest2 , #psi formula
+              data = willowUnm) #the data object
+
+#this is by far the best model, but elevation in the detection function is probably too much
+mOverpred <- occu(formula = ~day + dur + forest + forest*day + elev # p formula
+              ~elev + elev2 + forest + forest2 + elev2*forest + elev2*forest2 , #psi formula
+              data = willowUnm) #the data object
+
+# combine some representative models for displaying
+fl <- fitList(
+  "p(.)                                       psi(.)"                                       = m0,
+  "p(day + dur + forest)                      psi(elev + forest)"                           = mAlt,
+  "p(day + dur + forest)                      psi(elev + elev^2 + forest + forest^2)"       = mAlt1,
+  "p(day + dur + forest + forest^2)           psi(elev + elev^2 + forest + forest^2)"       = mAlt2,
+  "p(day + dur + forest + forest*day)         psi(elev)"                                    = mOptm_Alt,  
+  "p(day + dur + forest + forest*day)         psi(elev + elev^2*(forest + forest^2))"       = mOptm,
+  "p(day + dur + forest + forest*day)         psi((elev + elev^2)*(forest + forest^2))"     = mAlt3,
+  "p(day + dur + forest + forest*day + elev)  psi(elev + elev^2*(forest + forest^2))"     = mOverpred)
+
+# model output table to format
+ms <- modSel(fl)
+msTab <- ms@Full %>% select(c("model","nPars","AIC","delta")) %>%
+  mutate(pMod = sub("psi.*", "", model),
+         psiMod = paste0("psi",sub(".*psi", "", model))) %>% 
+  select(c("pMod", "psiMod","AIC"))
+knitr::kable(msTab,
+             format = "latex",
+             row.names = FALSE,
+             col.names = c("Detection",
+                           "Occupancy",
+                           "AIC"),
+             caption = "Fitted Model Comparisons") %>% 
+  kable_classic(full_width = F) %>%
+  row_spec(row = 0, bold = TRUE) %>% 
+   footnote(general_title = "Note.", 
+           footnote_as_chunk = TRUE,
+           threeparttable = TRUE,
+           general = "Models include survey day, survey duration, forest cover, and elevation as well as their squared and interaction terms. Interaction terms imply including base terms (e.g., elev*forest includes elev and forest).")
+```
+
+```{r gof, echo = F, fig.cap="Goodness-of-fit suggests 'good' fit at the 5% level but somewhat atypical model predictions."}
+ggplot() + 
+  geom_histogram(data = data.frame(t.star = gof.boot$t.star),
+                 aes(x=t.star), color="black", fill="#fde725", alpha = 0.3, binwidth = 1) +
+  geom_vline(aes(xintercept = gof.boot$chi.square), linewidth = 0.8, color = "#440154") +
+  xlab("Pearson Chi-square statistic") + 
+  ylab("Count") + 
+  theme_bw() +
+  ggtitle(bquote("Bootstrapped"~chi^2~"fit statistic (1000 samples, p ="~.(gof.boot$p.valu)~")"))
 ```
 
 ```{r spatPred1, echo = F, fig.height = 6, fig.cap="Spatial trends of elevation, forest cover, and estimated occupancy across Switzerland."}
