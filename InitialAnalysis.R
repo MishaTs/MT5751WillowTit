@@ -13,6 +13,32 @@ willowNum <- willow %>% mutate(forestsq = forest^2,
   mutate_all(as.numeric) %>% 
   rownames_to_column("id")
 
+willowSum <- willowNum %>% mutate(forestP = forest*100,
+                                  elevR = 1182.574 + elev*646.333,
+                                  y.1 = as.factor(y.1),
+                                  y.2 = as.factor(y.2),
+                                  y.3 = as.factor(y.3)) %>% 
+  select(-c("id","elev","elevsq","forest","forestsq","iLength"))
+
+# brief data visualisation
+hist(willowNum$forest)
+hist(willowNum$elev)
+hist(willowNum$length)
+# no clear relationship here, except that there's no forest at very high-elevation areas
+ggplot(willowNum, aes(x = forest, y = elev)) + geom_point()
+# no occurrence at lower elevations, higher occurrence at higher elevations
+# no real shifts between time periods
+ggplot(willowNum, aes(x = elev, fill = y.1)) + geom_histogram() + facet_wrap(~y.1) + theme(legend.position = "")
+ggplot(willowNum, aes(x = elev, fill = y.2)) + geom_histogram() + facet_wrap(~y.2) + theme(legend.position = "")
+ggplot(willowNum, aes(x = elev, fill = y.3)) + geom_histogram() + facet_wrap(~y.3) + theme(legend.position = "")
+# complex forest relationship w/ no occurrence at predominantly low forest cover and an inverse relationship across forest cover types
+# no shifts between time periods again
+ggplot(willowNum, aes(x = forest, fill = y.1)) + geom_histogram() + facet_wrap(~y.1) + theme(legend.position = "")
+ggplot(willowNum, aes(x = forest, fill = y.2)) + geom_histogram() + facet_wrap(~y.2) + theme(legend.position = "")
+ggplot(willowNum, aes(x = forest, fill = y.3)) + geom_histogram() + facet_wrap(~y.3) + theme(legend.position = "")
+
+
+
 willowUnm <- unmarkedFrameOccu(
   y = willowNum[,c("y.1","y.2","y.3")], 
   # we are interested in breeding bird occupancy for the WHOLE breeding season, so days (which affects occupancy on a more granular level) are not good site covariates in this case
@@ -32,6 +58,12 @@ willowUnm <- unmarkedFrameOccu(
                  elev2 = willowNum[,c("elevsq","elevsq","elevsq")])
 )
 summary(willowUnm)
+
+# some more plotting
+hist(willowUnm@obsCovs$day)
+hist(willowUnm@obsCovs$dur)
+hist(willowUnm@obsCovs$intensity)
+
 
 # null model
 m0 <- occu(~1 ~1, data = willowUnm)
@@ -207,6 +239,11 @@ willowPredSDM <- modavgPred(list(mOptm), # top model
                             newdata = for_pred, #spatially indexed data frame
                             parm.type = "psi",  #predict from state model
                             c.hat = gof.boot$c.hat.est) #inflate SEs using Royle & Kery method
+# save to speed up compiling
+write_rds(willowPredSDM, file = "willowPred.rds")
+# read in the saved for analysis
+willowPredSDM <- read_rds("willowPred.rds")
+
 #add data to predictions manually
 willow_sdm <- for_pred %>% mutate(Predicted = willowPredSDM$mod.avg.pred,
                                   SE = willowPredSDM$uncond.se,
