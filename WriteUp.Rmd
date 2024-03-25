@@ -399,9 +399,37 @@ gpredH <- ggplot(data = willow_sdm, aes(x=X, y=Y,fill=upper)) +
 cowplot::plot_grid(gpredL, gpredM_2, gpredH,nrow=3)
 ```
 
-Given non-linear parameter estimates, we first examine spatial occupancy estimates. First, estimates cannot differentiate between the southern Swiss Alps's alpine tit and the willow tit in northwestern Jura and central pre-Alps and may drive complex parameter nonlinearities---intermediate elevation with high forest in the former, but intermediate vegetation with high elevation in the latter. (Figure \@ref(fig:spatPred1)) Overall, we struggle to conclude anything beyond tit avoidance of low-lying river valleys and the Central Plateau; estimated occupancy peaks above 50% only around Jura Vadois in the west, surrounding Rhone and Ticino river valleys in the south, and upslope Lake Lucerne's surrounding Pre-Alps. (Figure \@ref(fig:spatPred2)) 
+Given non-linear parameter estimates (of which all are significant excluding forest base effects), we first examine spatial occupancy estimates. (Table \@ref(tab:regOut)) First, estimates cannot differentiate between the southern Swiss Alps's alpine tit and the willow tit in northwestern Jura and central pre-Alps and may drive complex parameter nonlinearities---intermediate elevation with high forest in the former, but intermediate vegetation with high elevation in the latter. (Figure \@ref(fig:spatPred1)) Overall, we struggle to conclude anything beyond tit avoidance of low-lying river valleys and the Central Plateau; estimated occupancy peaks above 50% only around Jura Vadois, surrounding Rhone and Ticino river valleys, and upslope Lake Lucerne's Pre-Alps. (Figure \@ref(fig:spatPred2)) 
 
 Looking at (spatially ambiguous) quadrant-specific willow tit occupancy, quadrants 25 and 62 have extremely low occupancy due to few trees and low elevation. In contrast, quadrants 150 and 203 show more uncertainty at extreme values of forest cover and elevation; however, best estimates suggest that willow tits more likely occupy than not. (Table \@ref(tab:quadPred)) 
+
+```{r regOut, echo = F, message = F}
+table <- data.frame(
+	Parameter = c("Intercept", "Elevation", "Elevation^2", "Forest", "Forest^2", "Elev^2:Forest", "Elev^2:Forest^2"),
+	Estimate = c(-1.55, 2.65, -1.40, 5.77, -4.16, 10.57, -12.80),
+	SE = c(1.367, 0.424, 0.562, 5.065, 4.562, 4.505, 5.994),
+	pValue = c(2.56e-01, 4.30e-10, 1.28e-02, 2.55e-01, 3.62e-01, 1.90e-02, 3.28e-02),
+	sig = c("","***","**","","","**","**")
+)
+
+knitr::kable(table,
+             align = "c",
+             format = "latex",
+             row.names = FALSE,
+             col.names = c("Regressor",
+                           "Effect Estimate",
+                           "Standard Error",
+                           "P-Value",
+                           "Significance"),
+             #digits = c(0, 3, 3, 3, 3, 0, 0),
+             caption = "Link-Scale State Logit Regression Results") %>% 
+  kable_classic(full_width = F) %>%
+  row_spec(row = 0, bold = TRUE) %>% 
+   footnote(general_title = "Note.", 
+           footnote_as_chunk = TRUE,
+           threeparttable = TRUE,
+           general = "*** significance at the 1% level; ** significance at the 5% level")
+```
 
 ```{r quadPred, echo = F, message = F}
 # generate predictions for 4 quadrants of interest
