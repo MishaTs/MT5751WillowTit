@@ -598,7 +598,8 @@ willowRes <- willowPred %>% mutate(Predicted = predQuads$mod.avg.pred,
                                    SE = predQuads$uncond.se,
                                    lower = predQuads$lower.CL,
                                    upper = predQuads$upper.CL,
-                                   elev = round((646.333*elev+1182.574),0)) %>% 
+                                   elev = round((646.333*elev+1182.574),0),
+                                   forest = forest*100) %>% 
   select(-c(elev2, forest2, iLength, intensity1, intensity2, intensity3))
 
 

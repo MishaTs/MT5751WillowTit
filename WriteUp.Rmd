@@ -92,32 +92,10 @@ MT5751: Estimating Animal Abundance and Biodiversity \\
 
 # Executive Summary
 
-Willow tits (*Poecile montanus*) etc etc.
+Switzerland is home to many willow tits (*Poecile montanus*) that have avoided population declines affecting Eurasian conspecifics. Using data from a well-structured, long-term monitoring programme, we look at 2014 willow tit occurrence and detectability across Switzerland using a single-season, single-species occupancy model. Resulting analysis confirms complex relationships between occupancy, forest cover, and elevation while hinting at unmodelled subspecies distributions. Though data limitations suggest imperfect fit and potential bias, we find that *P. montanus* generally prefers 50-70% forested areas at mid-to-high elevations, but trends differ depending on specific forest-elevation interactions. Though further accounting for land cover and climate impacts would improve our confidence, current results suggest avoiding overforestation (over 75% forest cover) in low and high elevation areas in favour of more diverse landscapes. Furthermore, climate change presents a key opportunity to afforest high-elevation areas, albeit slowly, that are preferred by *P. montanus*. Of course, managers should perform these in tandem with conventional strategies like deadwood preservation to best conserve Swiss willow tits going forward.[@mollet_steigende_2009]
 
 # Introduction
-Willow tits are a well-studied resident Eurasian breeding bird species seeing substantial population declines in some areas like Britain and Finland.[@kumpula_effects_2023; @parry_nesting_2018] Divided into several subspecies, Swiss alpine (*montanus*) and willow (*rhenanus* and *salicarius*) tits have experienced fewer pressures and maintained their population better than their international compatriots. Even so, alpine tits have proven especially resilient in contrast to more vulnerable willow tits, possibly caused by interspecific and intraspecific competition, changing vegetation onset, and rising temperatures.[@knaus_swiss_2018; @riecke_sharing_2021] Some environmental drivers are particularly clear: whether via its species name *montanus* or its French common name (la mésange boréale), we have long known about the bird's dependence on mountainous, forested habitats. Averse to competition, the species shows strong density-dependence and preference for forest edge habitats and thus particularly responds to land use changes.[@bani_winners_2019] Using occupancy modelling, we unpack specific drivers of willow tit occupancy and detectability, provide habitat management recommendations, and predict national-level as well as some quadrant-specific occurrence.
-
-# Methods
-The Swiss programme MHB (Monitoring Häufige Brutvögel) annually surveys 267 squares nationwide to understand bird populations: we use a pre-processed subset of 237 quadrants with detected willow tits across three survey occasions (two for high-altitude quadrants) and various possible factors including elevation, forest cover, survey duration, survey route length, and survey day.[@sutherland_statsecol_2024] Data quality may be imperfect---MHB documentation lists surveys as running from mid-April to mid-July, but our "day" measure allegedly starts at the start of the year which suggests surveying outside the breeding season from January to April.[@knaus_swiss_2018] (Table \@ref(tab:sumStats)) For analysis, we z-score elevation, convert forest cover to a proportion, and assume that survey day measures the date from 1 April rather than 1 January. As we lack spatial quadrant locations, we forgo initial exploration of detected willow tit distribution and skip directly to occupancy.
-
-Hierarchical occupancy modelling provides the best method of separating out tit detectability $p$ from occupancy $\psi$; we need to determine which of our observations stemmed from observer patterns versus the true underlying state process. The resulting two-tier model looks across $i$ quadrants and $j$ survey occasions to estimate $p$ and $\psi$ using a logistic relationship $ln(\frac{x}{1-x})$ for probabilities:
-\begin{align*}
-logit(\psi_i) & = \beta_0 + \beta_1 Elevation_{i} + \beta_2 Elevation^2_{i} + \beta_3 Forest_{i} + \beta_4 Forest^2_{i}\\ 
-&+ \beta_5 Forest_{i} Elevation^2_{i} + \beta_6 Forest^2_{i} Elevation^2_{i} 
-\end{align*}
-$$logit(p_{ij}) = \alpha_0 + \alpha_1 Day_{ij} + \alpha_2 Duration_{ij} + \alpha_3 Forest_{ij} + \alpha_4 Forest_{ij} Day_{ij}$$
-Detection and state functions, based on only four covariates, demonstrate the complexity of fitting highly non-linear relationships using this linear (GLM) framework fitted using `unmarked` in `R`.[@kellner_unmarked_2023; @r_core_team_r_2023] To account for clear non-linearities in forest cover and elevation, we manually and automatically compared all models containing potentially relevant covariates.[@barton_mumin_2023; @akaike_new_1974] Overall, adding non-linearity substantially improved model fit measured by AIC. (Table \@ref(tab:modelComp)) Finally, we tackled model suitability using Pearson's chi-squared via bootstrap estimation: MacKenzie-Bailey goodness-of-fit tests measured the chance of seeing our data given the model via a p-value and resulting overdispersion $\hat{c}$.[@mazerolle_aiccmodavg_2023] To correct for imperfect fit, we inflated prediction errors by $\hat{c}$.[@kery_applied_2016]
-
-# Results
-Overall, model fit is sub-par but passable yet suggests unmodelled heterogeneity---a violation of occupancy modelling assumptions. On one hand, we  understand including covariates like forest*day interactions for detection (i.e., foliage thickness impedes observer visibility) and occupancy impacts from squared relationships for elevation (i.e., optimal mountain habitat below the tree line) and forests (i.e., higher interspecific competition and less deadwood in aggressively-forested areas). The joint relationship between both forest and elevation further approximates various components of ecosystem suitability like climate and diet.[@vanhinsbergh_review_2003] Nonetheless, we also avoid overfitting despite AIC suggesting elevation-dependent detection. Elevation indeed affects cloud cover, heat, and humidity and therefore detection (by proxy) but imperfectly captures their effects.[@rottler_elevation-dependent_2019; @hohnsbein_effects_1984] Instead, identifiability issues inhibit parameter-specific inference for only minor predictive improvements.[@cole_parameter_2020] Thus, our model balances predictive and inferential analysis goals by imperfectly match the data but better generalising beyond anomalous 2014 heat and vegetation. (Figure \@ref(fig:gof))
-
-Given model non-linearity for parameter estimates, we examine partial and predictive effects for inference and management. First, spatial predictions cannot differentiate between the southern Swiss Alps' alpine tit and the willow tit in northwestern Jura and central pre-Alps, represent some confusion between complex environmental parameters---intermediate elevation and high forest in the former, and intermediate vegetation and high elevation in the latter. (Figure \@ref(fig:spatPred1)) Overall, we struggle to conclude anything beyond tit avoidance of low-lying river valleys and the Central Plateau; estimated occupancy peaks above 50% only around Jura Vadois in the west, surrounding Rhone and Ticino river valleys in the south, and upslope Lake Lucerne's surrounding Pre-Alps. (Figure \@ref(fig:spatPred2))
-
-Partial effects on detection are important only to understand modern limitations and future data collection: observers detect more tits earlier in unforested areas, yet forests allow better detection later in the survey. (Figure \@ref(fig:pEffects1)) Of course, longer surveys detect more, and time appears more important than survey length that we omitted from the model. (Figure \@ref(fig:pEffects2)) More crucially, elevation and forests strongly affect occupancy: higher elevations single-handedly increase occupancy and further determine forestation affects. At low and high elevations, willow tits prefer 50% forest cover but stomach more substantial 60-70% forest cover along intermediate elevation. (Figure \@ref(fig:psiEffects)) Both elevation and forest cover demonstrate huge uncertainty at large values
-
-GR (Geographic Region)
-
-
+Willow tits are a well-studied resident Eurasian breeding bird species seeing substantial population declines in some areas like Britain and Finland.[@kumpula_effects_2023; @parry_nesting_2018] Divided into several subspecies, Swiss alpine (*montanus*) and willow tits (*rhenanus* and *salicarius*) have experienced fewer pressures and better maintained their population. Alpine tits have proven especially resilient in contrast to more vulnerable willow tits, possibly caused by interspecific and intraspecific competition, changing vegetation onset, and rising temperatures.[@knaus_swiss_2018; @riecke_sharing_2021] Some environmental drivers are particularly clear: whether via its species name *montanus* or its French common name (la mésange boréale), we known much about the bird's dependence on mountainous, forested habitats. Averse to competition, willow tits show strong density-dependence and preference for forest edge habitats and thus respond strongly to land use changes.[@bani_winners_2019] Using occupancy modelling, we unpack specific drivers of willow tit occupancy and detectability, provide habitat management recommendations, and estimate national-level as well as some quadrant-specific occurrence.
 
 ```{r sumStats, echo = F, message = F}
 # process data for summarising
@@ -167,6 +145,17 @@ willowSum %>%
   #give the table a title
   as_kable_extra(caption = "Data Summary Statistics Split by First Occasion Detection")
 ```
+
+# Methods
+The Swiss programme MHB (Monitoring Häufige Brutvögel) annually surveys 267 squares nationwide to understand bird populations: we use a pre-processed subset of 237 quadrants with detected willow tits across three survey occasions (two for high-altitude quadrants) and various possible factors including elevation, forest cover, survey duration, survey route length, and survey day.[@sutherland_statsecol_2024] Data quality may be imperfect---MHB documentation listed surveys as running from mid-April to mid-July, but our "day" measure allegedly started at the start of the year which suggests surveying outside the breeding season from January to April.[@knaus_swiss_2018] (Table \@ref(tab:sumStats)) For analysis, we z-scored elevation, converted forest cover to a proportion, and assumed that survey day measures the date from 1 April rather than 1 January. As we lacked spatial quadrant locations, we forgo initial exploration of detected willow tit distribution and skip directly to occupancy.
+
+Hierarchical occupancy modelling provided the best method of separating out tit detectability $p$ from occupancy $\psi$; we needed to determine which of our observations stemmed from observer patterns versus the true underlying state process. The resulting two-tier single-season, single-species model looked across $i$ quadrants and $j$ survey occasions to estimate $p$ and $\psi$ using a logistic relationship $ln(\frac{x}{1-x})$ for probabilities:
+\begin{align*}
+logit(\psi_i) & = \beta_0 + \beta_1 Elevation_{i} + \beta_2 Elevation^2_{i} + \beta_3 Forest_{i} + \beta_4 Forest^2_{i}\\ 
+&+ \beta_5 Forest_{i} Elevation^2_{i} + \beta_6 Forest^2_{i} Elevation^2_{i} 
+\end{align*}
+$$logit(p_{ij}) = \alpha_0 + \alpha_1 Day_{ij} + \alpha_2 Duration_{ij} + \alpha_3 Forest_{ij} + \alpha_4 Forest_{ij} Day_{ij}$$
+Detection and state functions, based on only four covariates, demonstrated the complexity of fitting highly non-linear relationships using this linear (GLM) framework fitted with `unmarked` in `R`.[@kellner_unmarked_2023; @r_core_team_r_2023] To account for clear non-linearities in forest cover and elevation, we manually and automatically compared all models containing potentially relevant covariates.[@barton_mumin_2023; @akaike_new_1974] Overall, adding non-linearity substantially improved model fit measured by AIC. (Table \@ref(tab:modelComp)) Finally, we tackled model suitability using Pearson's chi-squared via bootstrap estimation: MacKenzie-Bailey goodness-of-fit tests measured the chance of seeing our data given the model via a p-value and resulting overdispersion $\hat{c}$.[@mazerolle_aiccmodavg_2023] To correct for imperfect fit, we inflated errors by $\hat{c}$.[@kery_applied_2016]
 
 ```{r modelComp, echo = F, message = F}
 # null model
@@ -234,7 +223,7 @@ knitr::kable(msTab,
            general = "Models include survey day, survey duration, forest cover, and elevation as well as their squared and interaction terms. Interaction terms imply including base terms (e.g., elev*forest includes elev and forest).")
 ```
 
-```{r gof, echo = F, fig.cap="Goodness-of-fit suggests 'good' fit at the 5% level but somewhat atypical model predictions."}
+```{r gof, fig.height = 2, echo = F, fig.cap="Goodness-of-fit suggests 'good' yet somewhat atypical model fit at the 5% level."}
 ggplot() + 
   geom_histogram(data = data.frame(t.star = gof.boot$t.star),
                  aes(x=t.star), color="black", fill="#fde725", alpha = 0.3, binwidth = 1) +
@@ -244,6 +233,9 @@ ggplot() +
   theme_bw() +
   ggtitle(bquote("Bootstrapped"~chi^2~"fit statistic ( 1000 samples, p ="~.(gof.boot$p.valu)~")"))
 ```
+
+# Results
+Overall, our model is passable but suggests violated assumptions. On one hand, we understand covariates like forest*day interactions for detection (i.e., foliage density affects plumage camouflage) and occupancy impacts from squared relationships with elevation (i.e., optimal mountain habitat below the tree line) and forests (i.e., higher competition and less deadwood in aggressively-forested areas). The joint relationship between both forest and elevation further approximates miscellaneous ecosystem suitability like climate and diet.[@vanhinsbergh_review_2003] Nonetheless, we avoid overfitting despite AIC suggesting elevation-dependent detection. Elevation indeed affects cloud cover, heat, and humidity and therefore detection (by proxy) but imperfectly captures these effects.[@rottler_elevation-dependent_2019; @hohnsbein_effects_1984] Instead, identifiability issues inhibit parameter-specific inference; more importantly, overfit empirical performance implies unmodelled detection heterogeneity and occupancy underestimates.[@cole_parameter_2020; @kery_applied_2016] Thus, fit suggests omitted explanatory covariates (e.g., climate, subspecies) violate independence across sites and occasions despite some promising goodness-of-fit results. (Figure \@ref(fig:gof)) Nonetheless, our model balances predictive and inferential goals: imperfectly matching the data may better generalise beyond anomalous 2014 heat and vegetation.
 
 ```{r spatPred1, echo = F, fig.height = 6, fig.cap="Spatial trends of elevation, forest cover, and estimated occupancy across Switzerland."}
 data(Switzerland)
@@ -342,7 +334,7 @@ gpredE <- ggplot(data = willow_sdm, aes(x=X, y=Y,fill=SE)) +
 cowplot::plot_grid(gelev,gfor,gpredM_1,gpredE,nrow=2)
 ```
 
-```{r spatPred2, echo = F, fig.height = 6, fig.cap="Mean, upper, and lower bound predicted occupancy demonstrating extreme uncertainty and few high-confidence areas."}
+```{r spatPred2, echo = F, fig.height = 6, fig.cap="Mean, upper, and lower bound predicted occupancy demonstrating extreme uncertainty and few high-confidence areas. Colour axes are rescaled to facilitate clear absolute comparisons."}
 gpredL <- ggplot(data = willow_sdm, aes(x=X, y=Y,fill=lower)) +
   geom_raster() +
   scale_fill_viridis_c(direction = 1, 
@@ -405,30 +397,49 @@ gpredH <- ggplot(data = willow_sdm, aes(x=X, y=Y,fill=upper)) +
 cowplot::plot_grid(gpredL, gpredM_2, gpredH,nrow=3)
 ```
 
-```{r pEffects1, echo = F, fig.cap="Caption."}
-# now onto detection
-#---------------------------------------------------------------------------------------#
-#p ~ dur | median(day & forest)
-pred_p_dur <- data.frame(dur = seq(min(willowUnm@obsCovs$dur, na.rm=TRUE),
-                                   max(willowUnm@obsCovs$dur, na.rm=TRUE),
-                                   length = 30),
-                         day = median(willowUnm@obsCovs$day, na.rm=TRUE),
-                         forest = median(willowUnm@obsCovs$forest, na.rm=TRUE))
-predPDur <- modavgPred(list(mOptm), newdata = pred_p_dur, parm.type = "detect", c.hat = gof.boot$c.hat.est)
-pred_p_dur <- pred_p_dur %>% mutate(Predicted = predPDur$mod.avg.pred,
-                                    SE = predPDur$uncond.se,
-                                    lower = predPDur$lower.CL,
-                                    upper = predPDur$upper.CL,
-                                    forestP = forest*100)
-pDurPlot <- ggplot(data = pred_p_dur, aes(x = dur, y = Predicted)) +
-  geom_ribbon(aes(ymin=lower, ymax=upper), fill="#440154", alpha=0.1) +
-  geom_line(size=1,color="#440154") +
-  ylab("P(Detected)") + xlab("Survey Duration (min)") + ylim(0,1) + theme_bw()
+Given non-linear parameter estimates, we first examine spatial occupancy estimates. First, estimates cannot differentiate between the southern Swiss Alps's alpine tit and the willow tit in northwestern Jura and central pre-Alps and may drive complex parameter nonlinearities---intermediate elevation with high forest in the former, but intermediate vegetation with high elevation in the latter. (Figure \@ref(fig:spatPred1)) Overall, we struggle to conclude anything beyond tit avoidance of low-lying river valleys and the Central Plateau; estimated occupancy peaks above 50% only around Jura Vadois in the west, surrounding Rhone and Ticino river valleys in the south, and upslope Lake Lucerne's surrounding Pre-Alps. (Figure \@ref(fig:spatPred2)) 
 
-pDurPlot
+Looking at (spatially ambiguous) local willow tit presence for four quadrants, quadrants 25 and 62 have extremely low occupancy due to few trees and low elevation. In contrast, quadrants 150 and 203 show more uncertainty at extreme values of forest cover and elevation; however, best estimates suggest that willow tits more likely occupy than not. (Table \@ref(tab:quadPred)) 
+
+```{r quadPred, echo = F, message = F}
+# generate predictions for 4 quadrants of interest
+willowPred <- willowNum %>% filter(id %in% c(25, 62, 150, 203)) %>% 
+  rename(elev2 = elevsq,
+         forest2 = forestsq)
+# predicting occurrence from the state process
+predQuads <- modavgPred(list(mOptm), newdata = willowPred, parm.type = "psi", c.hat = gof.boot$c.hat.est)
+willowRes <- willowPred %>% mutate(Predicted = predQuads$mod.avg.pred,
+                                   SE = predQuads$uncond.se,
+                                   lower = predQuads$lower.CL,
+                                   upper = predQuads$upper.CL,
+                                   elev = round((646.333*elev+1182.574),0),
+                                   forest = forest*100) %>% 
+  select(c(id, Predicted, SE, lower, upper, elev, forest))
+
+knitr::kable(willowRes,
+             align = "c",
+             format = "latex",
+             row.names = FALSE,
+             col.names = c("Quadrant",
+                           "Pred Psi",
+                           "Psi Error",
+                           "Psi Lower",
+                           "Psi Upper",
+                           "Elevation (m)",
+                           "Forest (%)"),
+             digits = c(0, 3, 3, 3, 3, 0, 0),
+             caption = "Four Quadrant-Specific Willow Tit Occupancy (Psi) Predictions") %>% 
+  kable_classic(full_width = F) %>%
+  row_spec(row = 0, bold = TRUE) %>% 
+   footnote(general_title = "Note.", 
+           footnote_as_chunk = TRUE,
+           threeparttable = TRUE,
+           general = "Only quadrant 203 detected a willow tit, while other quadrants had no detections.")
 ```
 
-```{r pEffects2, echo = F, fig.cap="Caption."}
+Partial effects on detection elucidate data limitations and future collection strategies: observers detect more tits later in forested areas due to contrast between brown-grey plumage and slowly emerging green foliage, yet in theory, foliage-obscured visibility may act contrarily too. (Figure \@ref(fig:pEffects1)) Of course, longer surveys detect more, and time matters more than omitted survey length. (Figure \@ref(fig:pEffects2)) For occupancy, higher elevations single-handedly increase occupancy and further determine forestation affects. At low and high elevations, willow tits prefer 50% forest cover but stomach more substantial 60-70% forest cover along intermediate elevation. (Figure \@ref(fig:psiEffects)) Of course, both elevation and forest cover demonstrate huge uncertainty at hint at model weaknesses: in spite of results, no trees reside above 2500 metres in Switzerland, and some local tree lines start at 1300 m.[@szerencsits_swiss_2012] Conversely, assisted upslope migration via deliberate afforestation can create ideal, non-competitive environments for willow tits given climate change. Though natural upslope migration stops at 100 m past the Swiss tree line, deliberately introducing hardy trees---high-elevation pines like *Pinus cembra*---would enable deciduous tree recruitment at higher altitudes.[@vitasse_tree_2012]
+
+```{r pEffects2, echo = F, fig.width = 7, fig.cap="Survey day and forest effects on detection under 25th, median, and 75th percentile values of non-axis variables. Detection may increase with forest cover due to plumage---willow tits better camoflauge under greys and browns than greens. On early survey days with less foliage in forested areas, detection is harder, while possible weather or climate effects like snow melts exposing rock surfaces may drive lower detection in the absence of forest ecosystem greenery."}
 #---------------------------------------------------------------------------------------#
 #p ~ day | median(dur & forest)
 pred_p_dayL <- data.frame(day = seq(min(willowUnm@obsCovs$day, na.rm=TRUE),
@@ -523,7 +534,7 @@ pred_p_forH <- pred_p_forH %>% mutate(Predicted = predPForH$mod.avg.pred,
                                       lower = predPForH$lower.CL,
                                       upper = predPForH$upper.CL,
                                       forestP = forest*100)
-ggplot(data = pred_p_forH, aes(x = forestP, y = Predicted)) +
+pForPlotH <- ggplot(data = pred_p_forH, aes(x = forestP, y = Predicted)) +
   geom_ribbon(aes(ymin=lower, ymax=upper), fill="#440154", alpha=0.1) +
   geom_line(size=1,color="#440154") +
   ylab("P(Detected)") + xlab("Forest (%) on Day 72") + ylim(0,1) + theme_bw()
@@ -644,6 +655,31 @@ ggpsiforH <- ggplot(data = pred_psi_forH, aes(x = forestP, y = Predicted)) +
 cowplot::plot_grid(ggpsieleL, ggpsieleM, ggpsieleH, ggpsiforL, ggpsiforM, ggpsiforH, nrow=2)
 ```
 
+On net, covariates poorly capture spatio-temporal variation across quadrants and occasions but provide some insights into elevation and forest cover dependencies in willow tit occupancy. Though assumption violations threaten substantial inference, management regimes may (1) avoid overforesting suitable habitats, and (2) afforest high-elevation areas to support tree line increases and expand preferred willow tit habitat. Of course, future analyses would ideally test the impact of land cover and climate on occupancy to validate such anthropogenic interventions.[@knaus_swiss_2018]
+
+```{r pEffects1, echo = F, fig.cap="Longer surveys increase detection more so than surveying longer routes or doing so more intensely."}
+# now onto detection
+#---------------------------------------------------------------------------------------#
+#p ~ dur | median(day & forest)
+pred_p_dur <- data.frame(dur = seq(min(willowUnm@obsCovs$dur, na.rm=TRUE),
+                                   max(willowUnm@obsCovs$dur, na.rm=TRUE),
+                                   length = 30),
+                         day = median(willowUnm@obsCovs$day, na.rm=TRUE),
+                         forest = median(willowUnm@obsCovs$forest, na.rm=TRUE))
+predPDur <- modavgPred(list(mOptm), newdata = pred_p_dur, parm.type = "detect", c.hat = gof.boot$c.hat.est)
+pred_p_dur <- pred_p_dur %>% mutate(Predicted = predPDur$mod.avg.pred,
+                                    SE = predPDur$uncond.se,
+                                    lower = predPDur$lower.CL,
+                                    upper = predPDur$upper.CL,
+                                    forestP = forest*100)
+pDurPlot <- ggplot(data = pred_p_dur, aes(x = dur, y = Predicted)) +
+  geom_ribbon(aes(ymin=lower, ymax=upper), fill="#440154", alpha=0.1) +
+  geom_line(size=1,color="#440154") +
+  ylab("P(Detected)") + xlab("Survey Duration (min)") + ylim(0,1) + theme_bw()
+
+pDurPlot
+```
+
 \newpage
 # Code Appendix
 
@@ -674,24 +710,45 @@ willowSum <- willowNum %>% mutate(forestP = forest*100,
 hist(willowNum$forest)
 hist(willowNum$elev)
 hist(willowNum$length)
-# no clear relationship here, except that there's no forest at very high-elevation areas
+# no clear relationship here, except no forest at very high-elevation areas
 ggplot(willowNum, aes(x = forest, y = elev)) + geom_point()
 # no occurrence at lower elevations, higher occurrence at higher elevations
 # no real shifts between time periods
-ggplot(willowNum, aes(x = elev, fill = y.1)) + geom_histogram() + facet_wrap(~y.1) + theme(legend.position = "")
-ggplot(willowNum, aes(x = elev, fill = y.2)) + geom_histogram() + facet_wrap(~y.2) + theme(legend.position = "")
-ggplot(willowNum, aes(x = elev, fill = y.3)) + geom_histogram() + facet_wrap(~y.3) + theme(legend.position = "")
-# complex forest relationship w/ no occurrence at predominantly low forest cover and an inverse relationship across forest cover types
+ggplot(willowNum, aes(x = elev, fill = y.1)) + 
+  geom_histogram() + 
+  facet_wrap(~y.1) + 
+  theme(legend.position = "")
+ggplot(willowNum, aes(x = elev, fill = y.2)) + 
+  geom_histogram() + 
+  facet_wrap(~y.2) + 
+  theme(legend.position = "")
+ggplot(willowNum, aes(x = elev, fill = y.3)) + 
+  geom_histogram() + 
+  facet_wrap(~y.3) + 
+  theme(legend.position = "")
+# complex forest relationship
+# no occurrence at predominantly low forest cover
+# an inverse relationship across forest cover types
 # no shifts between time periods again
-ggplot(willowNum, aes(x = forest, fill = y.1)) + geom_histogram() + facet_wrap(~y.1) + theme(legend.position = "")
-ggplot(willowNum, aes(x = forest, fill = y.2)) + geom_histogram() + facet_wrap(~y.2) + theme(legend.position = "")
-ggplot(willowNum, aes(x = forest, fill = y.3)) + geom_histogram() + facet_wrap(~y.3) + theme(legend.position = "")
+ggplot(willowNum, aes(x = forest, fill = y.1)) + 
+  geom_histogram() + 
+  facet_wrap(~y.1) + 
+  theme(legend.position = "")
+ggplot(willowNum, aes(x = forest, fill = y.2)) + 
+  geom_histogram() + 
+  facet_wrap(~y.2) + 
+  theme(legend.position = "")
+ggplot(willowNum, aes(x = forest, fill = y.3)) + 
+  geom_histogram() + 
+  facet_wrap(~y.3) + 
+  theme(legend.position = "")
 
 
 
 willowUnm <- unmarkedFrameOccu(
   y = willowNum[,c("y.1","y.2","y.3")], 
-  # we are interested in breeding bird occupancy for the WHOLE breeding season, so days (which affects occupancy on a more granular level) are not good site covariates in this case
+  # we are interested in breeding bird occupancy for the WHOLE breeding season
+  # days (occasion-specific) are not good site covariates in this case
   siteCovs = data.frame(elev = willowNum$elev,
                         elev2 = willowNum$elevsq,
                         forest = willowNum$forest,
@@ -720,8 +777,10 @@ m0 <- occu(~1 ~1, data = willowUnm)
 
 # full model
 # intensity:length interaction is just dur and thus not included
-mfull <- occu(formula = ~day + dur + intensity + length + day*dur + dur*intensity + day*length + day*intensity + dur*length  # p formula
-              ~elev + elev2 + forest + forest2 + elev*forest + elev2*forest2 + elev*forest2 + elev2*forest, #psi formula
+mfull <- occu(formula = ~day + dur + intensity + length + day*dur + dur*intensity + 
+                day*length + day*intensity + dur*length  # p formula
+              ~elev + elev2 + forest + forest2 + elev*forest + 
+                elev2*forest2 + elev*forest2 + elev2*forest, #psi formula
               data = willowUnm) #the data object
 
 summary(mfull)
@@ -739,9 +798,14 @@ mBIC <- occu(formula = ~dur # p formula
              data = willowUnm) #the data object
 summary(mBIC)
 
-# we missed a few variables, mainly forests which could affect visibility by surveyors (even though it also influences true occupancy)
-mfullAct <- occu(formula = ~day + dur + intensity + length + day*dur + dur*intensity + day*length + day*intensity + dur*length + forest + forest*dur + forest*day + forest*intensity + forest*length # p formula
-              ~elev + elev2 + forest + forest2 + elev*forest + elev2*forest2 + elev*forest2 + elev2*forest, #psi formula
+# we missed a few variables, mainly forests which could affect visibility
+# (even though it also influences true occupancy)
+mfullAct <- occu(formula = ~day + dur + intensity + length + day*dur + 
+                   dur*intensity + day*length + day*intensity + dur*length + 
+                   forest + forest*dur + forest*day + forest*intensity + 
+                   forest*length # p formula
+              ~elev + elev2 + forest + forest2 + elev*forest + elev2*forest2 + 
+                elev*forest2 + elev2*forest, #psi formula
               data = willowUnm) #the data object
 
 summary(mfullAct)
@@ -771,18 +835,21 @@ mOptm_Alt <- occu(formula = ~day + dur + forest + forest*day # p formula
               ~elev, #psi formula
               data = willowUnm) #the data object
 
-# recording visibility/leafing may be a good way to increase separability and avoid forest in both models
+# recording visibility/leafing may be a good way to increase separability
+# maybe avoid forest in both models?
 mOptm <- occu(formula = ~day + dur + forest + forest*day # p formula
               ~elev + elev2 + forest + forest2 + elev2*forest + elev2*forest2 , #psi formula
               data = willowUnm) #the data object
 
 mAlt3 <- occu(formula = ~day + dur + forest + forest*day # p formula
-              ~elev + elev2 + forest + forest2 + elev*forest + elev*forest2 + elev2*forest + elev2*forest2 , #psi formula
+              ~elev + elev2 + forest + forest2 + elev*forest + 
+                elev*forest2 + elev2*forest + elev2*forest2 , #psi formula
               data = willowUnm) #the data object
 
-#this is by far the best model, but elevation in the detection function is probably too much
+# by far the best model, but elevation in the detection function is too much
 mOverpred <- occu(formula = ~day + dur + forest + forest*day + elev # p formula
-              ~elev + elev2 + forest + forest2 + elev2*forest + elev2*forest2 , #psi formula
+              ~elev + elev2 + forest + forest2 + 
+                elev2*forest + elev2*forest2 , #psi formula
               data = willowUnm) #the data object
 
 # combine some representative models for displaying
@@ -816,8 +883,8 @@ vif(mOptm, type = "det")
 gof.boot <- mb.gof.test(mOptm, nsim = 1000, ncores = 10)
 # save this and re-use output out of pity for my computer
 write_rds(gof.boot, file = "gofBootstrap.rds")
-# p-values generally vary between 0.4 and 0.9, but the difference to c-hat is negligible 
-# 10000 cores confirms a p-value around 0.7 but the plot is too ugly so this is not it
+# p-values generally vary between 0.4 and 0.9, but negligible chat difference
+# 10000 cores confirms a p-value around 0.7 but the plot is too ugly
 # gof.boot <- mb.gof.test(mOptm, nsim = 10000, ncores = 10)
 
 
@@ -829,7 +896,8 @@ write_rds(gof.boot.test, file = "gofBootstrapOverfit.rds")
 
 # read in the saved for analysis
 gof.boot <- read_rds("gofBootstrap.rds")
-# even so, our model is very much closer to the tail of the chi^2 distribution and we're quite uncertain
+# even so, our model is very much closer to the tail of the chi^2 distribution
+# p-value may be deceiptive, the plot is a good visual
 ggplot() + 
   geom_histogram(data = data.frame(t.star = gof.boot$t.star),
                  aes(x=t.star), color="black", fill="#fde725", alpha = 0.3, binwidth = 1) +
@@ -839,7 +907,8 @@ ggplot() +
   theme_bw() +
   ggtitle(bquote("Bootstrapped"~chi^2~"fit statistic (1000 samples, p ="~.(gof.boot$p.valu)~")"))
 
-data(Switzerland)
+#start spatial plotting
+data(Switzerland) # import Swiss data
 gelev <- ggplot(data = Switzerland, aes(x=x, y=y,fill=elevation)) +
   geom_raster() +
   scale_fill_viridis_c(direction = 1, 
@@ -857,7 +926,7 @@ gelev <- ggplot(data = Switzerland, aes(x=x, y=y,fill=elevation)) +
   guides(fill = guide_colorbar(# draw border around the legend
                                frame.colour = "black",
                                barwidth = 10)) + 
-  coord_fixed()
+  coord_fixed() # don't play around w/ dimensions
 gfor <- ggplot(data = Switzerland, aes(x=x, y=y,fill=forest)) +
   geom_raster() +
   scale_fill_viridis_c(direction = 1, 
@@ -876,19 +945,27 @@ gfor <- ggplot(data = Switzerland, aes(x=x, y=y,fill=forest)) +
     frame.colour = "black",
     barwidth = 10)) + 
   coord_fixed()
-
-for_pred <- data.frame(elev = (Switzerland$elevation - 1182.574)/646.333,      # convert original m to z-score
-                       elev2 = ((Switzerland$elevation - 1182.574)/646.333)^2, # convert original m to z-score
-                       forest = Switzerland$forest/100,          #want prop not %
-                       forest2 = Switzerland$forest/100,         #want prop not %
-                       X = Switzerland$x,                        #keep the coordinates
-                       Y = Switzerland$y)                        #keep the coordinates
+                      # convert original m to z-score
+for_pred <- data.frame(elev = (Switzerland$elevation - 1182.574)/646.333,
+                       # convert original m to z-score
+                       elev2 = ((Switzerland$elevation - 1182.574)/646.333)^2,
+                       #want prop not %
+                       forest = Switzerland$forest/100,
+                       #want prop not %
+                       forest2 = Switzerland$forest/100,         
+                       X = Switzerland$x,       #keep the coordinates
+                       Y = Switzerland$y)       #keep the coordinates
 cowplot::plot_grid(gelev,gfor,nrow=2)
 
 willowPredSDM <- modavgPred(list(mOptm), # top model
                             newdata = for_pred, #spatially indexed data frame
                             parm.type = "psi",  #predict from state model
-                            c.hat = gof.boot$c.hat.est) #inflate SEs using Royle & Kery method
+                            c.hat = gof.boot$c.hat.est) #to inflate SEs
+# save to speed up compiling
+write_rds(willowPredSDM, file = "willowPred.rds")
+# read in the saved for analysis
+willowPredSDM <- read_rds("willowPred.rds")
+
 #add data to predictions manually
 willow_sdm <- for_pred %>% mutate(Predicted = willowPredSDM$mod.avg.pred,
                                   SE = willowPredSDM$uncond.se,
@@ -999,16 +1076,23 @@ gpredH <- ggplot(data = willow_sdm, aes(x=X, y=Y,fill=upper)) +
 cowplot::plot_grid(gpredL, gpredM_2, gpredH,nrow=3)
 
 
-
-#---------------------------------------------------------------------------------------#
-#psi ~ elev | mean(forest)
-pred_psi_eleL <- data.frame(elev = seq(min(willowUnm@siteCovs$elev, na.rm=TRUE),
-                                      max(willowUnm@siteCovs$elev, na.rm=TRUE),
-                                      length = 30),
-                           forest = quantile(probs = 0.25, willowUnm@siteCovs$forest, na.rm=TRUE)) %>% 
+# plot marginal effects
+#-----------------------------------------------------------------------------#
+#psi ~ elev | quantiles(forest)
+pred_psi_eleL <- data.frame(elev = seq(min(willowUnm@siteCovs$elev, 
+                                           na.rm=TRUE),
+                                       max(willowUnm@siteCovs$elev, 
+                                           na.rm=TRUE),
+                                       length = 30),
+                            forest = quantile(probs = 0.25, 
+                                              willowUnm@siteCovs$forest, 
+                                              na.rm=TRUE)) %>% 
   mutate(elev2 = elev^2,
          forest2 = forest^2)
-predPsiEleL <- modavgPred(list(mOptm), newdata = pred_psi_eleL, parm.type = "psi", c.hat = gof.boot$c.hat.est)
+predPsiEleL <- modavgPred(list(mOptm), 
+                          newdata = pred_psi_eleL, 
+                          parm.type = "psi", 
+                          c.hat = gof.boot$c.hat.est)
 pred_psi_eleL <- pred_psi_eleL %>% mutate(Predicted = predPsiEleL$mod.avg.pred,
                                           SE = predPsiEleL$uncond.se,
                                           lower = predPsiEleL$lower.CL,
@@ -1017,15 +1101,24 @@ pred_psi_eleL <- pred_psi_eleL %>% mutate(Predicted = predPsiEleL$mod.avg.pred,
 ggpsieleL <- ggplot(data = pred_psi_eleL, aes(x = elevR, y = Predicted)) +
   geom_ribbon(aes(ymin=lower, ymax=upper), fill="#21918c", alpha=0.1) +
   geom_line(size=1,color="#21918c") +
-  ylab("P(Occupied)") + xlab("Elevation (m)") + ylim(0,1) + theme_bw()
-
-pred_psi_eleM <- data.frame(elev = seq(min(willowUnm@siteCovs$elev, na.rm=TRUE),
-                                      max(willowUnm@siteCovs$elev, na.rm=TRUE),
-                                      length = 30),
-                           forest = median(willowUnm@siteCovs$forest, na.rm=TRUE)) %>% 
+  ylab("P(Occupied)") + 
+  xlab("Elevation (m); 8% Forest") + 
+  ylim(0,1) + 
+  theme_bw()
+# repeat for median
+pred_psi_eleM <- data.frame(elev = seq(min(willowUnm@siteCovs$elev, 
+                                           na.rm=TRUE),
+                                       max(willowUnm@siteCovs$elev, 
+                                           na.rm=TRUE),
+                                       length = 30),
+                            forest = median(willowUnm@siteCovs$forest, 
+                                            na.rm=TRUE)) %>% 
   mutate(elev2 = elev^2,
          forest2 = forest^2)
-predPsiEleM <- modavgPred(list(mOptm), newdata = pred_psi_eleM, parm.type = "psi", c.hat = gof.boot$c.hat.est)
+predPsiEleM <- modavgPred(list(mOptm), 
+                          newdata = pred_psi_eleM, 
+                          parm.type = "psi", 
+                          c.hat = gof.boot$c.hat.est)
 pred_psi_eleM <- pred_psi_eleM %>% mutate(Predicted = predPsiEleM$mod.avg.pred,
                                           SE = predPsiEleM$uncond.se,
                                           lower = predPsiEleM$lower.CL,
@@ -1034,15 +1127,25 @@ pred_psi_eleM <- pred_psi_eleM %>% mutate(Predicted = predPsiEleM$mod.avg.pred,
 ggpsieleM <- ggplot(data = pred_psi_eleM, aes(x = elevR, y = Predicted)) +
   geom_ribbon(aes(ymin=lower, ymax=upper), fill="#21918c", alpha=0.1) +
   geom_line(size=1,color="#21918c") +
-  ylab("P(Occupied)") + xlab("Elevation (m)") + ylim(0,1) + theme_bw()
-
-pred_psi_eleH <- data.frame(elev = seq(min(willowUnm@siteCovs$elev, na.rm=TRUE),
-                                      max(willowUnm@siteCovs$elev, na.rm=TRUE),
-                                      length = 30),
-                           forest = quantile(probs = 0.75, willowUnm@siteCovs$forest, na.rm=TRUE)) %>% 
+  ylab("P(Occupied)") + 
+  xlab("Elevation (m); 33% Forest") + 
+  ylim(0,1) + 
+  theme_bw()
+# repeat for 75th percentile
+pred_psi_eleH <- data.frame(elev = seq(min(willowUnm@siteCovs$elev, 
+                                           na.rm=TRUE),
+                                       max(willowUnm@siteCovs$elev, 
+                                           na.rm=TRUE),
+                                       length = 30),
+                            forest = quantile(probs = 0.75, 
+                                              willowUnm@siteCovs$forest, 
+                                              na.rm=TRUE)) %>% 
   mutate(elev2 = elev^2,
          forest2 = forest^2)
-predPsiEleH <- modavgPred(list(mOptm), newdata = pred_psi_eleH, parm.type = "psi", c.hat = gof.boot$c.hat.est)
+predPsiEleH <- modavgPred(list(mOptm), 
+                          newdata = pred_psi_eleH, 
+                          parm.type = "psi", 
+                          c.hat = gof.boot$c.hat.est)
 pred_psi_eleH <- pred_psi_eleH %>% mutate(Predicted = predPsiEleH$mod.avg.pred,
                                           SE = predPsiEleH$uncond.se,
                                           lower = predPsiEleH$lower.CL,
@@ -1051,14 +1154,17 @@ pred_psi_eleH <- pred_psi_eleH %>% mutate(Predicted = predPsiEleH$mod.avg.pred,
 ggpsieleH <- ggplot(data = pred_psi_eleH, aes(x = elevR, y = Predicted)) +
   geom_ribbon(aes(ymin=lower, ymax=upper), fill="#21918c", alpha=0.1) +
   geom_line(size=1,color="#21918c") +
-  ylab("P(Occupied)") + xlab("Elevation (m)") + ylim(0,1) + theme_bw()
+  ylab("P(Occupied)") + 
+  xlab("Elevation (m); 57% Forest") + 
+  ylim(0,1) + 
+  theme_bw()
 
 #---------------------------------------------------------------------------------------#
-#psi ~ for | mean(elev)
+#psi ~ for | quantiles(elev)
 pred_psi_forL <- data.frame(forest = seq(min(willowUnm@siteCovs$forest, na.rm=TRUE),
-                                      max(willowUnm@siteCovs$forest, na.rm=TRUE),
-                                      length = 30),
-                           elev = quantile(probs = 0.25, willowUnm@siteCovs$elev, na.rm=TRUE)) %>% 
+                                         max(willowUnm@siteCovs$forest, na.rm=TRUE),
+                                         length = 30),
+                            elev = quantile(probs = 0.25, willowUnm@siteCovs$elev, na.rm=TRUE)) %>% 
   mutate(elev2 = elev^2,
          forest2 = forest^2)
 predPsiForL <- modavgPred(list(mOptm), newdata = pred_psi_forL, parm.type = "psi", c.hat = gof.boot$c.hat.est)
@@ -1070,12 +1176,12 @@ pred_psi_forL <- pred_psi_forL %>% mutate(Predicted = predPsiForL$mod.avg.pred,
 ggpsiforL <- ggplot(data = pred_psi_forL, aes(x = forestP, y = Predicted)) +
   geom_ribbon(aes(ymin=lower, ymax=upper), fill="#21918c", alpha=0.1) +
   geom_line(size=1,color="#21918c") +
-  ylab("P(Occupied)") + xlab("Forest Cover (%)") + ylim(0,1) + theme_bw()
+  ylab("P(Occupied)") + xlab("Forest Cover (%); 570 m") + ylim(0,1) + theme_bw()
 
 pred_psi_forM <- data.frame(forest = seq(min(willowUnm@siteCovs$forest, na.rm=TRUE),
-                                        max(willowUnm@siteCovs$forest, na.rm=TRUE),
-                                        length = 30),
-                           elev = median(willowUnm@siteCovs$elev, na.rm=TRUE)) %>% 
+                                         max(willowUnm@siteCovs$forest, na.rm=TRUE),
+                                         length = 30),
+                            elev = median(willowUnm@siteCovs$elev, na.rm=TRUE)) %>% 
   mutate(elev2 = elev^2,
          forest2 = forest^2)
 predPsiForM <- modavgPred(list(mOptm), newdata = pred_psi_forM, parm.type = "psi", c.hat = gof.boot$c.hat.est)
@@ -1087,137 +1193,29 @@ pred_psi_forM <- pred_psi_forM %>% mutate(Predicted = predPsiForM$mod.avg.pred,
 ggpsiforM <- ggplot(data = pred_psi_forM, aes(x = forestP, y = Predicted)) +
   geom_ribbon(aes(ymin=lower, ymax=upper), fill="#21918c", alpha=0.1) +
   geom_line(size=1,color="#21918c") +
-  ylab("P(Occupied)") + xlab("Forest Cover (%)") + ylim(0,1) + theme_bw()
+  ylab("P(Occupied)") + xlab("Forest Cover (%); 1070 m") + ylim(0,1) + theme_bw()
 
 pred_psi_forH <- data.frame(forest = seq(min(willowUnm@siteCovs$forest, na.rm=TRUE),
-                                        max(willowUnm@siteCovs$forest, na.rm=TRUE),
-                                        length = 30),
-                           elev = quantile(probs = 0.75, willowUnm@siteCovs$elev, na.rm=TRUE)) %>% 
+                                         max(willowUnm@siteCovs$forest, na.rm=TRUE),
+                                         length = 30),
+                            elev = quantile(probs = 0.75, willowUnm@siteCovs$elev, na.rm=TRUE)) %>% 
   mutate(elev2 = elev^2,
          forest2 = forest^2)
 predPsiForH <- modavgPred(list(mOptm), newdata = pred_psi_forH, parm.type = "psi", c.hat = gof.boot$c.hat.est)
 pred_psi_forH <- pred_psi_forH %>% mutate(Predicted = predPsiForH$mod.avg.pred,
-                                    SE = predPsiForH$uncond.se,
-                                    lower = predPsiForH$lower.CL,
-                                    upper = predPsiForH$upper.CL,
-                                    forestP = forest*100)
+                                          SE = predPsiForH$uncond.se,
+                                          lower = predPsiForH$lower.CL,
+                                          upper = predPsiForH$upper.CL,
+                                          forestP = forest*100)
 ggpsiforH <- ggplot(data = pred_psi_forH, aes(x = forestP, y = Predicted)) +
   geom_ribbon(aes(ymin=lower, ymax=upper), fill="#21918c", alpha=0.1) +
   geom_line(size=1,color="#21918c") +
-  ylab("P(Occupied)") + xlab("Forest Cover (%)") + ylim(0,1) + theme_bw()
-
-cowplot::plot_grid(ggpsieleL, ggpsieleM, ggpsieleH, ggpsiforL, ggpsiforM, ggpsiforH, nrow=2)
-
-#---------------------------------------------------------------------------------------#
-#psi ~ elev | quantile(forest)
-pred_psi_eleL <- data.frame(elev = seq(min(willowUnm@siteCovs$elev, na.rm=TRUE),
-                                      max(willowUnm@siteCovs$elev, na.rm=TRUE),
-                                      length = 30),
-                           forest = quantile(probs = 0.25, willowUnm@siteCovs$forest, na.rm=TRUE)) %>% 
-  mutate(elev2 = elev^2,
-         forest2 = forest^2)
-predPsiEleL <- modavgPred(list(mOptm), newdata = pred_psi_eleL, parm.type = "psi", c.hat = gof.boot$c.hat.est)
-pred_psi_eleL <- pred_psi_eleL %>% mutate(Predicted = predPsiEleL$mod.avg.pred,
-                                          SE = predPsiEleL$uncond.se,
-                                          lower = predPsiEleL$lower.CL,
-                                          upper = predPsiEleL$upper.CL,
-                                          elevR = 1182.574 + elev*646.333)
-ggpsieleL <- ggplot(data = pred_psi_eleL, aes(x = elevR, y = Predicted)) +
-  geom_ribbon(aes(ymin=lower, ymax=upper), fill="#21918c", alpha=0.1) +
-  geom_line(size=1,color="#21918c") +
-  ylab("P(Occupied)") + xlab("Elevation (m)") + ylim(0,1) + theme_bw()
-
-pred_psi_eleM <- data.frame(elev = seq(min(willowUnm@siteCovs$elev, na.rm=TRUE),
-                                      max(willowUnm@siteCovs$elev, na.rm=TRUE),
-                                      length = 30),
-                           forest = median(willowUnm@siteCovs$forest, na.rm=TRUE)) %>% 
-  mutate(elev2 = elev^2,
-         forest2 = forest^2)
-predPsiEleM <- modavgPred(list(mOptm), newdata = pred_psi_eleM, parm.type = "psi", c.hat = gof.boot$c.hat.est)
-pred_psi_eleM <- pred_psi_eleM %>% mutate(Predicted = predPsiEleM$mod.avg.pred,
-                                          SE = predPsiEleM$uncond.se,
-                                          lower = predPsiEleM$lower.CL,
-                                          upper = predPsiEleM$upper.CL,
-                                          elevR = 1182.574 + elev*646.333)
-ggpsieleM <- ggplot(data = pred_psi_eleM, aes(x = elevR, y = Predicted)) +
-  geom_ribbon(aes(ymin=lower, ymax=upper), fill="#21918c", alpha=0.1) +
-  geom_line(size=1,color="#21918c") +
-  ylab("P(Occupied)") + xlab("Elevation (m)") + ylim(0,1) + theme_bw()
-
-pred_psi_eleH <- data.frame(elev = seq(min(willowUnm@siteCovs$elev, na.rm=TRUE),
-                                      max(willowUnm@siteCovs$elev, na.rm=TRUE),
-                                      length = 30),
-                           forest = quantile(probs = 0.75, willowUnm@siteCovs$forest, na.rm=TRUE)) %>% 
-  mutate(elev2 = elev^2,
-         forest2 = forest^2)
-predPsiEleH <- modavgPred(list(mOptm), newdata = pred_psi_eleH, parm.type = "psi", c.hat = gof.boot$c.hat.est)
-pred_psi_eleH <- pred_psi_eleH %>% mutate(Predicted = predPsiEleH$mod.avg.pred,
-                                          SE = predPsiEleH$uncond.se,
-                                          lower = predPsiEleH$lower.CL,
-                                          upper = predPsiEleH$upper.CL,
-                                          elevR = 1182.574 + elev*646.333)
-ggpsieleH <- ggplot(data = pred_psi_eleH, aes(x = elevR, y = Predicted)) +
-  geom_ribbon(aes(ymin=lower, ymax=upper), fill="#21918c", alpha=0.1) +
-  geom_line(size=1,color="#21918c") +
-  ylab("P(Occupied)") + xlab("Elevation (m)") + ylim(0,1) + theme_bw()
-
-#---------------------------------------------------------------------------------------#
-#psi ~ for | quantile(elev)
-pred_psi_forL <- data.frame(forest = seq(min(willowUnm@siteCovs$forest, na.rm=TRUE),
-                                      max(willowUnm@siteCovs$forest, na.rm=TRUE),
-                                      length = 30),
-                           elev = quantile(probs = 0.25, willowUnm@siteCovs$elev, na.rm=TRUE)) %>% 
-  mutate(elev2 = elev^2,
-         forest2 = forest^2)
-predPsiForL <- modavgPred(list(mOptm), newdata = pred_psi_forL, parm.type = "psi", c.hat = gof.boot$c.hat.est)
-pred_psi_forL <- pred_psi_forL %>% mutate(Predicted = predPsiForL$mod.avg.pred,
-                                          SE = predPsiForL$uncond.se,
-                                          lower = predPsiForL$lower.CL,
-                                          upper = predPsiForL$upper.CL,
-                                          forestP = forest*100)
-ggpsiforL <- ggplot(data = pred_psi_forL, aes(x = forestP, y = Predicted)) +
-  geom_ribbon(aes(ymin=lower, ymax=upper), fill="#21918c", alpha=0.1) +
-  geom_line(size=1,color="#21918c") +
-  ylab("P(Occupied)") + xlab("Forest Cover (%)") + ylim(0,1) + theme_bw()
-
-pred_psi_forM <- data.frame(forest = seq(min(willowUnm@siteCovs$forest, na.rm=TRUE),
-                                        max(willowUnm@siteCovs$forest, na.rm=TRUE),
-                                        length = 30),
-                           elev = median(willowUnm@siteCovs$elev, na.rm=TRUE)) %>% 
-  mutate(elev2 = elev^2,
-         forest2 = forest^2)
-predPsiForM <- modavgPred(list(mOptm), newdata = pred_psi_forM, parm.type = "psi", c.hat = gof.boot$c.hat.est)
-pred_psi_forM <- pred_psi_forM %>% mutate(Predicted = predPsiForM$mod.avg.pred,
-                                          SE = predPsiForM$uncond.se,
-                                          lower = predPsiForM$lower.CL,
-                                          upper = predPsiForM$upper.CL,
-                                          forestP = forest*100)
-ggpsiforM <- ggplot(data = pred_psi_forM, aes(x = forestP, y = Predicted)) +
-  geom_ribbon(aes(ymin=lower, ymax=upper), fill="#21918c", alpha=0.1) +
-  geom_line(size=1,color="#21918c") +
-  ylab("P(Occupied)") + xlab("Forest Cover (%)") + ylim(0,1) + theme_bw()
-
-pred_psi_forH <- data.frame(forest = seq(min(willowUnm@siteCovs$forest, na.rm=TRUE),
-                                        max(willowUnm@siteCovs$forest, na.rm=TRUE),
-                                        length = 30),
-                           elev = quantile(probs = 0.75, willowUnm@siteCovs$elev, na.rm=TRUE)) %>% 
-  mutate(elev2 = elev^2,
-         forest2 = forest^2)
-predPsiForH <- modavgPred(list(mOptm), newdata = pred_psi_forH, parm.type = "psi", c.hat = gof.boot$c.hat.est)
-pred_psi_forH <- pred_psi_forH %>% mutate(Predicted = predPsiForH$mod.avg.pred,
-                                    SE = predPsiForH$uncond.se,
-                                    lower = predPsiForH$lower.CL,
-                                    upper = predPsiForH$upper.CL,
-                                    forestP = forest*100)
-ggpsiforH <- ggplot(data = pred_psi_forH, aes(x = forestP, y = Predicted)) +
-  geom_ribbon(aes(ymin=lower, ymax=upper), fill="#21918c", alpha=0.1) +
-  geom_line(size=1,color="#21918c") +
-  ylab("P(Occupied)") + xlab("Forest Cover (%)") + ylim(0,1) + theme_bw()
+  ylab("P(Occupied)") + xlab("Forest Cover (%); 1820 m") + ylim(0,1) + theme_bw()
 
 cowplot::plot_grid(ggpsieleL, ggpsieleM, ggpsieleH, ggpsiforL, ggpsiforM, ggpsiforH, nrow=2)
 
 
-
+# now onto detection
 #---------------------------------------------------------------------------------------#
 #p ~ dur | median(day & forest)
 pred_p_dur <- data.frame(dur = seq(min(willowUnm@obsCovs$dur, na.rm=TRUE),
@@ -1339,6 +1337,8 @@ cowplot::plot_grid(pDayPlotL, pDayPlot, pDayPlotH, pForPlotL, pForPlot, pForPlot
 pDurPlot
 
 
+
+
 # generate predictions for 4 quadrants of interest
 willowPred <- willowNum %>% filter(id %in% c(25, 62, 150, 203)) %>% 
   rename(elev2 = elevsq,
@@ -1349,8 +1349,9 @@ willowRes <- willowPred %>% mutate(Predicted = predQuads$mod.avg.pred,
                                    SE = predQuads$uncond.se,
                                    lower = predQuads$lower.CL,
                                    upper = predQuads$upper.CL,
-                                   elev = round((646.333*elev+1182.574),0)) %>% 
-  select(-c(elev2, forest2, iLength))
+                                   elev = round((646.333*elev+1182.574),0),
+                                   forest = forest*100) %>% 
+  select(-c(elev2, forest2, iLength, intensity1, intensity2, intensity3))
 
 
 
